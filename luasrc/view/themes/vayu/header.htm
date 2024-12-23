@@ -1,0 +1,63 @@
+<%
+	local sys  = require "luci.sys"
+	local util = require "luci.util"
+	local http = require "luci.http"
+	local disp = require "luci.dispatcher"
+	local ver  = require "luci.version"
+
+	local boardinfo = util.ubus("system", "board") or { }
+
+	local node = disp.context.dispatched
+	local path = table.concat(disp.context.path, "-")
+
+	http.prepare_content("text/html; charset=UTF-8")
+-%>
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0,viewport-fit=cover" />
+<title><%=striptags( (boardinfo.hostname or "OpenWrt") .. ( (node and node.title) and ' - ' .. translate(node.title) or '')) %> - LuCI</title>
+
+    <link rel="icon" href="<%=media%>/images/icon.png" sizes="192x192">
+	<link rel="icon" sizes="48x48" href="<%=media%>/logo_48.png">
+	<link rel="stylesheet" href="<%=media%>/style.css?v=<%= ver.luciversion %>">
+	<link rel="icon" href="<%=media%>/logo.svg" sizes="any">
+	<% if node and node.css then %>
+	<link rel="stylesheet" href="<%=resource%>/<%=node.css%>">
+	<% end -%>
+	<script src="<%=url('admin/translations', luci.i18n.context.lang)%><%# ?v=PKG_VERSION %>"></script>
+	<script src="<%=resource%>/cbi.js"></script>
+	<script src="<%=resource%>/luci.js?v=<%=ver.luciversion%>"></script>
+	<% if css then %>
+	<style title="text/css">
+		<%= css %>
+	</style>
+	<% end -%>
+</head>
+<body class="lang_<%=luci.i18n.context.lang%> <% if luci.dispatcher.context.authsession then %>logged-in<% end %> <% if not (path == "") then %>node-<%= path %><% else %>node-main-login<% end %>" data-page="<%= pcdata(path) %>">
+    <header>
+        <a class="brand" href="#"><%=striptags(boardinfo.hostname or "OpenWrt")%></a>
+			<ul class="nav" id="topmenu" style="display:none"></ul>
+			<div id="indicators" class="pull-right"></div>
+		</header>
+
+<div class="main">
+	<div class="loading"><span><div class="loading-img"></div><%:Collecting data...%></span></div>
+	<div class="main-right">
+		<div class="modemenu-buttons" style="display:none">
+			<ul id="modemenu"></ul>
+		</div>
+		<div id="maincontent">
+			<div class="container">
+				<%- if luci.sys.process.info("uid") == 0 and luci.sys.user.getuser("root") and not luci.sys.user.getpasswd("root") and path ~= "admin-system-admin-password" then -%>
+				<%- end -%>
+
+				<noscript>
+					<div class="alert-message warning">
+						<h4><%:JavaScript required!%></h4>
+						<p><%:You must enable JavaScript in your browser or LuCI will not work properly.%></p>
+					</div>
+				</noscript>
+
+				<div id="tabmenu" style="display:none"></div>
